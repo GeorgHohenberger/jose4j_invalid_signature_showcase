@@ -1,0 +1,21 @@
+buildscript {
+}
+
+plugins {
+   id 'java'
+}
+
+sourceCompatibility = 1.8
+
+repositories {
+   mavenCentral()
+}
+
+dependencies {
+   testImplementation 'io.jsonwebtoken:jjwt-api:0.10.5'
+   testImplementation 'io.jsonwebtoken:jjwt-impl:0.10.5'
+   testImplementation 'io.jsonwebtoken:jjwt-jackson:0.10.5'
+   testImplementation 'org.bitbucket.b_c:jose4j:0.6.5'
+   testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.3.2'
+   testImplementation 'junit:junit:4.12'
+}
