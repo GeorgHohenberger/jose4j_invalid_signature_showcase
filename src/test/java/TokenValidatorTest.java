@@ -1,14 +1,17 @@
 import java.security.Key;
 import java.util.Map;
 
-import org.jose4j.jwk.EllipticCurveJsonWebKey;
-import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jose4j.base64url.Base64Url;
+import org.jose4j.jwk.EllipticCurveJsonWebKey;
+import org.jose4j.jws.EcdsaUsingShaAlgorithm;
+import org.jose4j.jwt.consumer.ErrorCodes;
+import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import org.jose4j.jwx.CompactSerializer;
+import org.junit.Assert;
+import org.junit.Test;
 
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
@@ -23,13 +26,13 @@ public class TokenValidatorTest
    String wrongJwk = jwk.replace("ANraE", "ABCDE");
 
    @Test
-   public void testJose4jWithValidSignature()
+   public void testJose4jWithValidSignature() throws Exception
    {
       Assert.assertTrue(validateWithJose4jIsOk(token, jwk));
    }
 
    @Test
-   public void testJose4jWithInvalidSignature()
+   public void testJose4jWithInvalidSignature() throws Exception
    {
       Assert.assertFalse(validateWithJose4jIsOk(token, wrongJwk));
    }
@@ -61,18 +64,28 @@ public class TokenValidatorTest
       return true;
    }
 
-   private static boolean validateWithJose4jIsOk(String token, String jwk)
+   private static boolean validateWithJose4jIsOk(String token, String jwk) throws Exception
    {
       try
       {
+         // take keycloak's incorrectly formatted signature (ASN.1 DER) and convert it to the JWS/JWA standard format (concatenated R & S)
+         String[] parts = CompactSerializer.deserialize(token);
+         byte[] signatureBytesDer = Base64Url.decode(parts[2]);
+         byte[] signatureBytesConcat = EcdsaUsingShaAlgorithm.convertDerToConcatenated(signatureBytesDer, 64);
+         token = CompactSerializer.serialize(parts[0], parts[1], Base64Url.encode(signatureBytesConcat));
+
          new JwtConsumerBuilder()
                .setVerificationKey(buildKey(jwk))
+               .setSkipAllDefaultValidators()
                .build().process(token);
       }
-      catch (InvalidJwtException e)
+      catch (InvalidJwtException  e)
       {
-         System.err.println(e);
-         return false;
+         if (e.hasErrorCode(ErrorCodes.SIGNATURE_INVALID))
+         {
+            return false;
+         }
+         throw e;
       }
       return true;
    }
