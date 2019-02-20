@@ -46,12 +46,12 @@ public class TokenValidatorTest
       Assert.assertFalse(validateWithJasonWebTokenIsOk(token, wrongJwk));
    }
 
-   private static boolean validateWithJasonWebTokenIsOk(String token, String signature)
+   private static boolean validateWithJasonWebTokenIsOk(String token, String jwk)
    {
       try
       {
          JwtParser parser = Jwts.parser();
-         parser.setSigningKey(buildKey(signature));
+         parser.setSigningKey(buildKey(jwk));
          parser.parse(token);
       }
       catch (Exception e)
@@ -61,12 +61,12 @@ public class TokenValidatorTest
       return true;
    }
 
-   private static boolean validateWithJose4jIsOk(String token, String signature)
+   private static boolean validateWithJose4jIsOk(String token, String jwk)
    {
       try
       {
          new JwtConsumerBuilder()
-               .setVerificationKey(buildKey(signature))
+               .setVerificationKey(buildKey(jwk))
                .build().process(token);
       }
       catch (InvalidJwtException e)
@@ -77,12 +77,12 @@ public class TokenValidatorTest
       return true;
    }
 
-   private static Key buildKey(String signature)
+   private static Key buildKey(String jwkJson)
    {
       try
       {
          ObjectMapper objectMapper = new ObjectMapper();
-         JsonNode jsonNode = objectMapper.readTree(signature.getBytes());
+         JsonNode jsonNode = objectMapper.readTree(jwkJson.getBytes());
          Map jwkMap = objectMapper.convertValue(jsonNode, Map.class);
          return new EllipticCurveJsonWebKey(jwkMap).getKey();
       }
