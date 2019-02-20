@@ -1,8 +1,5 @@
 import java.security.Key;
-import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jose4j.base64url.Base64Url;
 import org.jose4j.jwk.EllipticCurveJsonWebKey;
 import org.jose4j.jws.EcdsaUsingShaAlgorithm;
@@ -94,10 +91,7 @@ public class TokenValidatorTest
    {
       try
       {
-         ObjectMapper objectMapper = new ObjectMapper();
-         JsonNode jsonNode = objectMapper.readTree(jwkJson.getBytes());
-         Map jwkMap = objectMapper.convertValue(jsonNode, Map.class);
-         return new EllipticCurveJsonWebKey(jwkMap).getKey();
+         return EllipticCurveJsonWebKey.Factory.newPublicJwk(jwkJson).getKey();
       }
       catch (Exception e)
       {
